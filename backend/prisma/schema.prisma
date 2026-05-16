@@ -1,0 +1,212 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  EMPLOYEE
+  MANAGER
+  ADMIN
+}
+
+enum GoalStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  LOCKED
+}
+
+enum UoMType {
+  NUMERIC
+  PERCENTAGE
+  TIMELINE
+  ZERO_BASED
+}
+
+enum AchievementStatus {
+  NOT_STARTED
+  ON_TRACK
+  COMPLETED
+}
+
+enum Quarter {
+  Q1
+  Q2
+  Q3
+  Q4
+}
+
+enum CyclePhase {
+  GOAL_SETTING
+  Q1
+  Q2
+  Q3
+  Q4
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  password     String
+  role         Role      @default(EMPLOYEE)
+  department   String
+  avatar       String?
+  managerId    String?
+  manager      User?     @relation("ManagerToEmployee", fields: [managerId], references: [id])
+  employees    User[]    @relation("ManagerToEmployee")
+  goalSheets   GoalSheet[]
+  comments     Comment[]
+  auditLogs    AuditLog[]
+  notifications Notification[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([email])
+  @@index([department])
+  @@index([managerId])
+}
+
+model GoalCycle {
+  id                  String      @id @default(cuid())
+  name                String
+  phase               CyclePhase
+  startDate           DateTime
+  endDate             DateTime
+  submissionDeadline  DateTime
+  isActive            Boolean     @default(true)
+  goalSheets          GoalSheet[]
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+}
+
+model GoalSheet {
+  id           String      @id @default(cuid())
+  employeeId   String
+  employee     User        @relation(fields: [employeeId], references: [id])
+  employeeName String
+  department   String
+  cycleId      String
+  cycle        GoalCycle   @relation(fields: [cycleId], references: [id])
+  status       GoalStatus  @default(DRAFT)
+  submittedAt  DateTime?
+  approvedAt   DateTime?
+  approvedBy   String?
+  version      Int         @default(1)
+  goals        Goal[]
+  comments     Comment[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([employeeId])
+  @@index([cycleId])
+  @@index([status])
+}
+
+model Goal {
+  id            String       @id @default(cuid())
+  sheetId       String
+  sheet         GoalSheet    @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  thrustArea    String
+  title         String
+  description   String?
+  uomType       UoMType
+  targetValue   Float?
+  targetDate    DateTime?
+  weightage     Int
+  isShared      Boolean      @default(false)
+  isReadonly    Boolean      @default(false)
+  parentGoalId  String?
+  achievements  Achievement[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([sheetId])
+  @@index([parentGoalId])
+}
+
+model Achievement {
+  id          String             @id @default(cuid())
+  goalId      String
+  goal        Goal               @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  quarter     Quarter
+  actualValue Float?
+  status      AchievementStatus @default(NOT_STARTED)
+  notes       String?
+  submittedAt DateTime?
+  isLocked    Boolean            @default(false)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@unique([goalId, quarter])
+  @@index([goalId])
+}
+
+model Comment {
+  id          String    @id @default(cuid())
+  goalSheetId String
+  sheet       GoalSheet @relation(fields: [goalSheetId], references: [id], onDelete: Cascade)
+  goalId      String?
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id])
+  authorName  String
+  content     String
+  createdAt   DateTime  @default(now())
+
+  @@index([goalSheetId])
+  @@index([authorId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  entityType String
+  entityId   String
+  actorId    String
+  actor      User     @relation(fields: [actorId], references: [id])
+  actorName  String
+  action     String
+  fieldName  String?
+  oldValue   String?
+  newValue   String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model Escalation {
+  id           String   @id @default(cuid())
+  employeeName String
+  department   String
+  type         String
+  level        Int
+  daysOverdue  Int
+  resolved     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([resolved])
+}
