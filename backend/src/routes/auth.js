@@ -123,4 +123,24 @@ router.post('/register', [
   }
 });
 
+// Debug endpoint - list all users (without passwords) - REMOVE IN PRODUCTION
+router.get('/debug/users', async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        department: true,
+        createdAt: true
+      }
+    });
+    res.json({ count: users.length, users });
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
