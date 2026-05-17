@@ -19,6 +19,8 @@ router.post('/login', [
   try {
     const { email, password } = req.body;
 
+    console.log('Login attempt for email:', email.toLowerCase());
+
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
       include: {
@@ -29,18 +31,24 @@ router.post('/login', [
     });
 
     if (!user) {
+      console.log('User not found for email:', email.toLowerCase());
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    console.log('User found:', user.email, 'Role:', user.role);
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.log('Password mismatch for email:', email.toLowerCase());
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    console.log('Login successful for email:', email.toLowerCase());
+
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, name: user.name },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      process.env.JWT_SECRET || 'default-secret-key',
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
     res.json({
