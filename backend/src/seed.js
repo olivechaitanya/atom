@@ -5,17 +5,14 @@ async function seed() {
   console.log('🌱 Starting database seed...');
 
   try {
-    // Clean existing data
-    await prisma.achievement.deleteMany();
-    await prisma.goal.deleteMany();
-    await prisma.comment.deleteMany();
-    await prisma.auditLog.deleteMany();
-    await prisma.notification.deleteMany();
-    await prisma.goalSheet.deleteMany();
-    await prisma.escalation.deleteMany();
-    await prisma.goalCycle.deleteMany();
-    await prisma.user.deleteMany();
-    console.log('🧹 Cleaned existing data');
+    // Check if users already exist (production-safe)
+    const existingUsers = await prisma.user.findMany();
+    if (existingUsers.length > 0) {
+      console.log('✅ Database already seeded with', existingUsers.length, 'users. Skipping seed.');
+      return;
+    }
+
+    console.log('🧹 No existing users found. Starting fresh seed...');
 
     // Create users
     const admin = await prisma.user.create({

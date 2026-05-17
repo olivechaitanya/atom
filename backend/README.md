@@ -69,6 +69,35 @@ npm start
 
 The API will be available at `http://localhost:5000`
 
+## Render Deployment
+
+### Build Command
+```bash
+npm install
+npm run build
+npx prisma migrate deploy
+npm run seed
+```
+
+### Start Command
+```bash
+npm start
+```
+
+### Environment Variables (Required on Render)
+- `DATABASE_URL` - PostgreSQL connection string
+- `JWT_SECRET` - Secret key for JWT token signing
+- `JWT_EXPIRES_IN` - Token expiration time (default: "7d")
+- `PORT` - Server port (default: 5000)
+- `NODE_ENV` - Environment (set to "production")
+- `CORS_ORIGIN` - Allowed CORS origins (comma-separated, or "*" for all)
+
+### Important Notes for Render
+1. **Migrations**: The `npx prisma migrate deploy` command runs pending migrations on the production database
+2. **Seeding**: The `npm run seed` command creates demo users if the database is empty
+3. **Postinstall**: The `postinstall` script automatically runs `prisma generate` to create the Prisma client
+4. **Database**: Ensure your PostgreSQL database is created and the DATABASE_URL is correctly set in Render environment variables
+
 ## API Endpoints
 
 ### Authentication

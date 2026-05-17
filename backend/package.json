@@ -7,10 +7,15 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
+    "build": "prisma generate",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "seed": "node src/seed.js"
+    "prisma:db:push": "prisma db push",
+    "seed": "node src/seed.js",
+    "seed:prod": "node src/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
